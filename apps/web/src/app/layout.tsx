@@ -1,4 +1,15 @@
+import Link from 'next/link';
 import { TRPCProvider } from '../trpc/Provider';
+import {
+  ClerkProvider,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from '@clerk/nextjs'
+
+import './globals.css'
 
 export default function RootLayout({
   children,
@@ -6,10 +17,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <TRPCProvider>{children}</TRPCProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <TRPCProvider>
+        <html lang="en">
+          <body>
+            <header className="flex justify-end items-center p-4 gap-4 h-16">
+              <SignedOut>
+                <SignInButton />
+                <SignUpButton />
+              </SignedOut>
+              <SignedIn>
+                <Link href="/">Home</Link>
+                <UserButton />
+              </SignedIn>
+            </header>
+            {children}
+          </body>
+        </html>
+      </TRPCProvider>
+    </ClerkProvider>
   );
 }
