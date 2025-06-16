@@ -1,55 +1,56 @@
+import { pgEnum } from "drizzle-orm/pg-core";
+import { decimal } from "drizzle-orm/pg-core";
+import { uuid } from "drizzle-orm/pg-core";
 import { pgTable, text, timestamp, boolean, integer, varchar } from "drizzle-orm/pg-core";
 
-export const usersTable = pgTable("users", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull(),
-  age: integer().notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  first_name: varchar("first_name", { length: 256 }),
+  last_name: varchar("last_name", { length: 256 }),
+  email: varchar("email", { length: 256 }),
+  image_url: varchar("image_url", { length: 256 }),
+  createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
+  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
+})
+
+export const messageRoleEnum = pgEnum('message_role', ['user', 'assistant', 'system', 'data']);
+
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  content: text("content").notNull(),
+  userId: uuid("user_id").references(() => users.id),
+  conversationId: uuid("conversation_id").references(() => conversations.id),
+  role: messageRoleEnum('role').notNull(),
+  llmId: uuid('llm_id')
+    .references(() => llms.id, { onDelete: 'set null' }),
+  createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
+  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 });
 
-
-export const user = pgTable("user", {
-  id: text('id').primaryKey(),
+export const llms = pgTable('llm', {
+  id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').$defaultFn(() => false).notNull(),
-  image: text('image'),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull()
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  provider: text('provider'),
+  pricing_input: decimal('pricing_input', { precision: 10, scale: 2 }),
+  pricing_output: decimal('pricing_output', { precision: 10, scale: 2 }),
+
+  createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow().notNull(),
+  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()).notNull(),
 });
 
-export const session = pgTable("session", {
-  id: text('id').primaryKey(),
-  expiresAt: timestamp('expires_at').notNull(),
-  token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' })
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title"),
+  ownerId: uuid("owner_id").references(() => users.id),
+  createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
+  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 });
 
-export const account = pgTable("account", {
-  id: text('id').primaryKey(),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
-  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  idToken: text('id_token'),
-  accessTokenExpiresAt: timestamp('access_token_expires_at'),
-  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-  scope: text('scope'),
-  password: text('password'),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull()
-});
-
-export const verification = pgTable("verification", {
-  id: text('id').primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date())
-});
+export const schema = {
+  users,
+  messages,
+  conversations,
+  llms
+}
