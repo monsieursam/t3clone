@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 
 export default function Chat() {
   const router = useRouter();
-  const { messages, input, handleInputChange } = useChat();
-  const { data, mutateAsync: createConversation } = api.conversations.create.useMutation();
+  const { input, handleInputChange } = useChat();
+  const { mutateAsync: createConversation } = api.conversations.create.useMutation();
   const { mutateAsync: addMessage } = api.messages.create.useMutation();
 
   const handleChatSubmit = async (e: React.FormEvent) => {
