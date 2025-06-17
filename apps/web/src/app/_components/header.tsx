@@ -6,8 +6,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ModeToggle } from "./mode-toggle"
 
 export function Header() {
-  const user = useAuth()
-
   return (
     <header className="w-full h-14 flex items-center px-4">
       <div className="flex flex-1 gap-2">

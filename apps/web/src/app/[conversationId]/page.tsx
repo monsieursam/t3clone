@@ -8,5 +8,4 @@ export default async function Chat() {
   const llms = await caller.llms.getAll();
 
   return <ChatInterface llms={llms} />
-
 }
