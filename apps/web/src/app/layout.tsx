@@ -28,12 +28,13 @@ export default function RootLayout({
             <ThemeProvider>
               <SidebarProvider>
                 <SidebarInset>
+                  <ChatSidebar />
                   <Header />
                   <main className="flex flex-1">
                     {children}
                   </main>
                 </SidebarInset>
-                <ChatSidebar />
+
               </SidebarProvider>
             </ThemeProvider>
           </body>
