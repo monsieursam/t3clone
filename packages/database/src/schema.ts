@@ -4,11 +4,11 @@ import { uuid } from "drizzle-orm/pg-core";
 import { pgTable, text, timestamp, boolean, integer, varchar } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  first_name: varchar("first_name", { length: 256 }),
-  last_name: varchar("last_name", { length: 256 }),
-  email: varchar("email", { length: 256 }),
-  image_url: varchar("image_url", { length: 256 }),
+  id: text('id').primaryKey(),
+  first_name: text("first_name"),
+  last_name: text("last_name"),
+  email: text("email"),
+  image_url: text("image_url"),
   createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
   updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 })
@@ -18,8 +18,8 @@ export const messageRoleEnum = pgEnum('message_role', ['user', 'assistant', 'sys
 export const messages = pgTable("messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   content: text("content").notNull(),
-  userId: uuid("user_id").references(() => users.id),
-  conversationId: uuid("conversation_id").references(() => conversations.id),
+  userId: text("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: 'cascade' }),
   role: messageRoleEnum('role').notNull(),
   llmId: uuid('llm_id')
     .references(() => llms.id, { onDelete: 'set null' }),
@@ -43,7 +43,8 @@ export const llms = pgTable('llm', {
 export const conversations = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title"),
-  ownerId: uuid("owner_id").references(() => users.id),
+  ownerId: text("owner_id").references(() => users.id, { onDelete: 'cascade' }),
+  participantsIds: text("participants_ids").array(),
   createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
   updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 });
@@ -54,3 +55,5 @@ export const schema = {
   conversations,
   llms
 }
+
+export type LLM = typeof llms.$inferSelect;

@@ -1,7 +1,8 @@
 import { router, protectedProcedure } from '../trpc'
 import { schema } from '@repo/database'
 import { z } from 'zod'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, or, inArray, arrayContains, asc } from 'drizzle-orm'
+import { TRPCError } from '@trpc/server'
 
 export const messagesRouter = router({
   // Get all messages for a conversation
@@ -10,16 +11,38 @@ export const messagesRouter = router({
       conversationId: z.string().uuid()
     }))
     .query(async ({ ctx, input }) => {
+      const conversation = await ctx.db
+        .select()
+        .from(schema.conversations)
+        .where(
+          and(
+            eq(schema.conversations.id, input.conversationId),
+            or(
+              eq(schema.conversations.ownerId, ctx.auth.userId),
+              arrayContains(schema.conversations.participantsIds, [ctx.auth.userId])
+            )
+          )
+        )
+
+      if (!conversation[0]) {
+        throw new TRPCError(
+          {
+            code: 'NOT_FOUND',
+            message: 'Conversation not found'
+          }
+        )
+      }
+
       const messages = await ctx.db
         .select()
         .from(schema.messages)
         .where(
           and(
             eq(schema.messages.conversationId, input.conversationId),
-            eq(schema.messages.userId, ctx.auth.userId)
           )
         )
-        .orderBy(desc(schema.messages.createdAt))
+        .orderBy(asc(schema.messages.createdAt))
+
       return messages
     }),
 

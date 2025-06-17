@@ -82,6 +82,7 @@ export async function POST(req: Request) {
           .where(eq(users.id, id));
       } else {
         // Create new user
+
         await db.insert(users).values({
           id: id,
           email: primaryEmail,

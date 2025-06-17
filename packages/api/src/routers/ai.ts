@@ -1,21 +1,35 @@
 import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
 import { experimental_generateImage as generateImage, generateText } from 'ai';
-import { publicProcedure, router } from '../trpc';
-import { TRPCError } from '@trpc/server';
+import { protectedProcedure, publicProcedure, router } from '../trpc';
+
+const allProviders = {
+  openai: openai,
+};
 
 export const aiRouter = router({
-  generateText: publicProcedure
+  generateText: protectedProcedure
     .input(z.object({
-      prompt: z.string(),
+      prompt: z.string().optional(),
+      provider: z.string(),
+      model: z.string(),
+      messages: z.array(z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+      })),
+      system: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const { prompt } = input;
-      const model = openai('gpt-3.5-turbo');
+      const { prompt, provider, model, messages, system } = input;
+      const currentProvider = allProviders[provider as keyof typeof allProviders];
+
+      const currentModel = currentProvider(model);
 
       const { text } = await generateText({
-        model,
+        model: currentModel,
         prompt,
+        messages,
+        system,
       });
 
       return text;

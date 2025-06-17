@@ -10,6 +10,10 @@ import {
 } from '@clerk/nextjs'
 
 import './globals.css'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import ChatSidebar from './_components/chat-sidebar';
+import { ThemeProvider } from './_components/theme-provider';
+import { Header } from './_components/header';
 
 export default function RootLayout({
   children,
@@ -19,21 +23,23 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <TRPCProvider>
+
         <html lang="en">
           <body>
-            <header className="flex justify-end items-center p-4 gap-4 h-16">
-              <SignedOut>
-                <SignInButton />
-                <SignUpButton />
-              </SignedOut>
-              <SignedIn>
-                <Link href="/">Home</Link>
-                <UserButton />
-              </SignedIn>
-            </header>
-            {children}
+            <ThemeProvider>
+              <SidebarProvider>
+                <SidebarInset>
+                  <Header />
+                  <main className="flex flex-1">
+                    {children}
+                  </main>
+                </SidebarInset>
+                <ChatSidebar />
+              </SidebarProvider>
+            </ThemeProvider>
           </body>
         </html>
+
       </TRPCProvider>
     </ClerkProvider>
   );
