@@ -23,6 +23,9 @@ export const messages = pgTable("messages", {
   role: messageRoleEnum('role').notNull(),
   llmId: uuid('llm_id')
     .references(() => llms.id, { onDelete: 'set null' }),
+
+  branchConversationsId: uuid('branch_conversations_id')
+    .references(() => branchConversations.id, { onDelete: 'cascade' }),
   createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
   updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 });
@@ -44,10 +47,21 @@ export const conversations = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title"),
   ownerId: text("owner_id").references(() => users.id, { onDelete: 'cascade' }),
-  participantsIds: text("participants_ids").array(),
+  participantsIds: text("participants_ids")
+    .array()
+    .references(() => users.id),
   createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
   updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 });
+
+export const branchConversations = pgTable("branch_conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title"),
+  conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: 'cascade' }),
+  ownerId: text("owner_id").references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow(),
+  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
+})
 
 export const schema = {
   users,

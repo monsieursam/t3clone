@@ -45,6 +45,7 @@ export const conversationsRouter = router({
         .insert(schema.conversations)
         .values({
           title: title || 'New Conversation',
+
           ownerId: ctx.auth.userId
         })
         .returning()
