@@ -19,6 +19,12 @@ export function useConversations() {
     },
   });
 
+  const deleteMutation = api.conversations.delete.useMutation({
+    onSuccess: () => {
+      utils.conversations.getAll.invalidate();
+    },
+  });
+
   return {
     conversations: query.data || [],
     isLoading: query.isLoading,
@@ -27,6 +33,8 @@ export function useConversations() {
     createConversationData: createMutation.data,
     createConversation: createMutation.mutateAsync,
     updateConversation: updateMutation.mutate,
+    deleteConversation: deleteMutation.mutate,
+    isDeleting: deleteMutation.isPending,
     isUpdating: updateMutation.isPending,
     isCreating: createMutation.isPending,
   };

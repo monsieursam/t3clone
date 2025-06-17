@@ -6,7 +6,7 @@ import { useChat } from '@ai-sdk/react';
 import { useParams } from 'next/navigation';
 import { Send, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +42,7 @@ export default function ChatInterface({ llms }: Props) {
       provider: selectedLLM?.provider || 'openai',
       stream: true,
       conversationId,
+      llmId: selectedLLM?.id,
       model: selectedLLM?.slug || 'gpt-3.5-turbo',
     },
     onFinish: async () => {
@@ -58,7 +59,6 @@ export default function ChatInterface({ llms }: Props) {
     console.log(messages);
     handleSubmit();
     setInput('');
-
 
     if (messages.length === 0) {
       const data = await getAnswer({
@@ -78,6 +78,16 @@ export default function ChatInterface({ llms }: Props) {
       })
     }
   }
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   return (
     <div className="flex flex-1 flex-col h-full">
@@ -151,6 +161,7 @@ export default function ChatInterface({ llms }: Props) {
           </div>
         </form>
       </div>
+      <div ref={messagesEndRef} />
     </div>
   );
 }

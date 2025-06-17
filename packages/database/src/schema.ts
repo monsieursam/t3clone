@@ -37,7 +37,7 @@ export const llms = pgTable('llm', {
   pricing_output: decimal('pricing_output', { precision: 10, scale: 2 }),
 
   createdAt: timestamp({ mode: 'date', precision: 3 }).defaultNow().notNull(),
-  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp({ mode: 'date', precision: 3 }).$onUpdate(() => new Date()),
 });
 
 export const conversations = pgTable("conversations", {

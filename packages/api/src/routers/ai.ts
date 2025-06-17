@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic'
 import { experimental_generateImage as generateImage, generateText } from 'ai';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
 
 const allProviders = {
   openai: openai,
+  anthropic: anthropic,
 };
 
 export const aiRouter = router({

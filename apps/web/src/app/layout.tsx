@@ -21,9 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+
     <ClerkProvider>
       <TRPCProvider>
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
           <body>
             <ThemeProvider>
               <SidebarProvider>
