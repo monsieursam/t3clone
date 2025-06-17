@@ -23,7 +23,6 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <TRPCProvider>
-
         <html lang="en">
           <body>
             <ThemeProvider>
