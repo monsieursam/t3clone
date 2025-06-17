@@ -27,8 +27,9 @@ export default function RootLayout({
           <body>
             <ThemeProvider>
               <SidebarProvider>
+                <ChatSidebar />
                 <SidebarInset>
-                  <ChatSidebar />
+
                   <Header />
                   <main className="flex flex-1">
                     {children}

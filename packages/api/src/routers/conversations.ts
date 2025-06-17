@@ -2,8 +2,6 @@ import { router, protectedProcedure } from '../trpc'
 import { schema } from '@repo/database'
 import { z } from 'zod'
 import { eq, and, desc } from 'drizzle-orm'
-import { openai } from '@ai-sdk/openai'
-import { generateText } from 'ai'
 
 export const conversationsRouter = router({
   // Get all conversations for the current user
@@ -42,22 +40,11 @@ export const conversationsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const { title } = input;
-      const model = openai('gpt-3.5-turbo');
-      const prompt = `
-        You are a helpful assistant.
-        Write a short and concise conversation title for the following conversation:
-        ${title}
-      `;
-
-      const { text } = await generateText({
-        model,
-        prompt,
-      });
 
       const conversation = await ctx.db
         .insert(schema.conversations)
         .values({
-          title: text || 'New Conversation',
+          title: title || 'New Conversation',
           ownerId: ctx.auth.userId
         })
         .returning()
