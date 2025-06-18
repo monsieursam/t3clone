@@ -67,7 +67,6 @@ export const aiRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const { n, messages } = input;
-      const { userId } = ctx.auth;
 
       const conversation = await ctx.db
         .select()
@@ -79,32 +78,34 @@ export const aiRouter = router({
               eq(schema.conversations.ownerId, ctx.auth.userId),
             )
           )
-        )
-
-
-      const model = openai.image('gpt-image-1');
+        );
 
       db.insert(schema.messages).values({
         content: messages && '',
         conversationId: input.conversationId,
+        userId: ctx.auth.userId,
         role: 'user',
       });
 
-      const { images } = await generateImage({
-        model,
-        prompt: messages ?? '',
-        n,
+
+
+      const response = await client.images.generate({
+        model: "gpt-image-1",
+        prompt: messages,
+        n: 1
       });
 
-      await db.insert(schema.messages).values({
-        content: messages ?? '',
-        role: 'assistant',
+      const image = response.data?.[0]?.b64_json
+
+      db.insert(schema.messages).values({
+        images: [image || ''],
+        content: messages && '',
         conversationId: input.conversationId,
-        // @ts-ignore
-        images: images.map((image) => image.base64Data),
+        userId: ctx.auth.userId,
+        role: 'user',
       });
 
-      return images;
+      return response;
     }),
 
   editImage: protectedProcedure

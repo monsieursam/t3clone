@@ -43,7 +43,7 @@ export default function ChatInterface({ llms }: Props) {
       id: msg.id,
       role: msg.role,
       content: msg.content,
-      image: msg.images,
+      images: msg.images,
     })),
     body: {
       provider: selectedLLM?.provider || 'openai',
@@ -76,28 +76,28 @@ export default function ChatInterface({ llms }: Props) {
       })
 
       if (image) {
-        invalidateMessageQuery();
+        const formattedImageData = `data:image/png;base64,${image?.data?.[0].b64_json}`;
+        setData((prev) => {
+          console.log(prev);
+          return [
+            ...(prev || []),
+            {
+              id: Date.now().toString(),
+              role: 'user',
+              content: input,
+            },
+            {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: '',
+              images: [formattedImageData],
+            },
+          ];
+        });
+
+        setInput('');
       }
 
-      setData((prev) => {
-        return [
-          ...(prev || []),
-          {
-            id: Date.now().toString(),
-            role: 'user',
-            content: input,
-          },
-          {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: '',
-            images: image,
-          },
-        ];
-      })
-
-      setInput('');
-      return;
     }
 
     if (messages.length === 0) {
@@ -159,11 +159,12 @@ export default function ChatInterface({ llms }: Props) {
                       }
                     })
                   }
+                  {console.log(message)}
                   {
-                    message?.image?.map((img, index) => (
+                    message?.images?.map((img, index) => (
                       <img
                         key={index}
-                        src={`data:image/png;base64,${img}`}
+                        src={img}
                         alt={img}
                         className="rounded-lg"
                       />
