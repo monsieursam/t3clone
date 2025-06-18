@@ -19,7 +19,6 @@ export const messagesRouter = router({
             eq(schema.conversations.id, input.conversationId),
             or(
               eq(schema.conversations.ownerId, ctx.auth.userId),
-              arrayContains(schema.conversations.participantsIds, [ctx.auth.userId])
             )
           )
         )
