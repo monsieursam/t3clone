@@ -81,7 +81,7 @@ export const aiRouter = router({
         );
 
       const data = await db.insert(schema.messages).values({
-        content: prompt && '',
+        content: prompt || '',
         conversationId: input.conversationId,
         userId: ctx.auth.userId,
         role: 'user',
@@ -99,8 +99,8 @@ export const aiRouter = router({
       const formattedImage = `data:image/png;base64,${image}`
 
       const redata = await db.insert(schema.messages).values({
-        images: [image || ''],
-        content: prompt && '',
+        images: [formattedImage || ''],
+        content: prompt || '',
         conversationId: input.conversationId,
         userId: ctx.auth.userId,
         role: 'assistant',

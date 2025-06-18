@@ -75,7 +75,6 @@ export default function ChatInterface({ llms }: Props) {
       })
 
       if (image) {
-        const formattedImageData = `data:image/png;base64,${image}`;
 
         invalidateMessageQuery();
 
@@ -92,7 +91,7 @@ export default function ChatInterface({ llms }: Props) {
               id: Date.now().toString(),
               role: 'assistant',
               content: input,
-              images: [formattedImageData],
+              images: [image],
             },
           ];
         });
