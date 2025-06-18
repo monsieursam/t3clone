@@ -58,13 +58,19 @@ export const aiRouter = router({
     }),
   generateImage: protectedProcedure
     .input(z.object({
-      prompt: z.string(),
+      messages: z.array(z.object
+        ({
+          role: z.enum(['user', 'assistant', 'data', 'system']),
+          content: z.string(),
+        })),
       conversationId: z.string(),
       size: z.number().optional(),
       n: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { n, prompt } = input;
+      const { n, messages } = input;
+
+      const prompt = messages.map(item => item.content).join('');
 
       const client = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,

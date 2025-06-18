@@ -69,7 +69,12 @@ export default function ChatInterface({ llms }: Props) {
       setInput('');
     } else if (selectedLLM?.capacity?.some((c) => c === 'image')) {
       const image = await getImage({
-        prompt: input,
+        messages: [
+          ...messages,
+          {
+            role: 'user',
+            content: input,
+          }],
         conversationId: conversationId as string,
         n: 1,
       })
