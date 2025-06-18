@@ -17,9 +17,7 @@ const allProviders = {
   })
 };
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+
 
 export const aiRouter = router({
   generateText: protectedProcedure
@@ -67,6 +65,10 @@ export const aiRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const { n, prompt } = input;
+
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
 
       const conversation = await ctx.db
         .select()
