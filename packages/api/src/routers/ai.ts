@@ -60,13 +60,13 @@ export const aiRouter = router({
     }),
   generateImage: protectedProcedure
     .input(z.object({
-      messages: z.string(),
+      prompt: z.string(),
       conversationId: z.string(),
       size: z.number().optional(),
       n: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { n, messages } = input;
+      const { n, prompt } = input;
 
       const conversation = await ctx.db
         .select()
@@ -80,32 +80,33 @@ export const aiRouter = router({
           )
         );
 
-      db.insert(schema.messages).values({
-        content: messages && '',
+      const data = await db.insert(schema.messages).values({
+        content: prompt && '',
         conversationId: input.conversationId,
         userId: ctx.auth.userId,
         role: 'user',
       });
 
-
+      console.log(data);
 
       const response = await client.images.generate({
         model: "gpt-image-1",
-        prompt: messages,
-        n: 1
+        prompt: prompt,
+        n: 1,
       });
 
-      const image = response.data?.[0]?.b64_json
+      const image = response?.data?.[0]?.b64_json;
+      const formattedImage = `data:image/png;base64,${image}`
 
-      db.insert(schema.messages).values({
+      const redata = await db.insert(schema.messages).values({
         images: [image || ''],
-        content: messages && '',
+        content: prompt && '',
         conversationId: input.conversationId,
         userId: ctx.auth.userId,
-        role: 'user',
+        role: 'assistant',
       });
 
-      return response;
+      return formattedImage;
     }),
 
   editImage: protectedProcedure

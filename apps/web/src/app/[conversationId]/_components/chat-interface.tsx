@@ -38,7 +38,7 @@ export default function ChatInterface({ llms }: Props) {
   const { mutateAsync: getAnswer } = api.ai.generateText.useMutation();
   const { mutateAsync: getImage, isPending: isPendingImage } = api.ai.generateImage.useMutation();
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, setData, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading } = useChat({
     initialMessages: messageData.map(msg => ({
       id: msg.id,
       role: msg.role,
@@ -67,17 +67,19 @@ export default function ChatInterface({ llms }: Props) {
     if (selectedLLM?.capacity?.some(c => c === 'text')) {
       handleSubmit();
       setInput('');
-      return;
     } else if (selectedLLM?.capacity?.some((c) => c === 'image')) {
       const image = await getImage({
-        messages: input,
+        prompt: input,
         conversationId: conversationId as string,
         n: 1,
       })
 
       if (image) {
-        const formattedImageData = `data:image/png;base64,${image?.data?.[0].b64_json}`;
-        setData((prev) => {
+        const formattedImageData = `data:image/png;base64,${image}`;
+
+        invalidateMessageQuery();
+
+        setMessages((prev) => {
           console.log(prev);
           return [
             ...(prev || []),
@@ -89,7 +91,7 @@ export default function ChatInterface({ llms }: Props) {
             {
               id: Date.now().toString(),
               role: 'assistant',
-              content: '',
+              content: input,
               images: [formattedImageData],
             },
           ];
@@ -102,8 +104,8 @@ export default function ChatInterface({ llms }: Props) {
 
     if (messages.length === 0) {
       const data = await getAnswer({
-        provider: selectedLLM?.provider || 'openai',
-        model: selectedLLM?.slug || 'gpt-3.5-turbo',
+        provider: 'openai',
+        model: 'gpt-3.5-turbo',
         system: 'Generate title with less than 5 words base on the user message',
         messages: [
           {
