@@ -89,8 +89,6 @@ export const aiRouter = router({
         role: 'user',
       });
 
-      console.log(data);
-
       const response = await client.images.generate({
         model: "gpt-image-1",
         prompt: prompt,
@@ -119,6 +117,10 @@ export const aiRouter = router({
       n: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
+      const client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
       const { imageFiles, prompt, size, n } = input;
 
       if (!imageFiles || imageFiles.length === 0) {
@@ -129,7 +131,6 @@ export const aiRouter = router({
       }
 
       try {
-        // Convert base64 image to a buffer
         const images = [];
         for (const imageFile of imageFiles) {
           const imageBuffer = Buffer.from(imageFile, 'base64');
