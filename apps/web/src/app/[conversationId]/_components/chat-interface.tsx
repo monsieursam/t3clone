@@ -64,8 +64,6 @@ export default function ChatInterface({ llms }: Props) {
     React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    setIsLoading(true);
-    console.log(messages);
     if (selectedLLM?.capacity?.some(c => c === 'text')) {
       handleSubmit();
       setInput('');
@@ -161,7 +159,6 @@ export default function ChatInterface({ llms }: Props) {
                       }
                     })
                   }
-                  {console.log(message)}
                   {
                     message?.image?.map((img, index) => (
                       <img
@@ -218,7 +215,7 @@ export default function ChatInterface({ llms }: Props) {
               {
                 isLoading || isPendingImage ? (
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                   </div>
                 ) : (
                   <Send className="h-4 w-4" />
