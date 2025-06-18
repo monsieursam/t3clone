@@ -119,15 +119,21 @@ export const aiRouter = router({
     .input(z.object({
       imageFiles: z.array(z.string().base64()),
       size: z.number().optional(),
-      prompt: z.string(),
+      messages: z.array(z.object({
+        role: z.enum(['user', 'assistant', 'data', 'system']),
+        content: z.string(),
+      })),
       n: z.number().optional(),
+      conversationId: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const client = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       });
 
-      const { imageFiles, prompt, size, n } = input;
+      const { imageFiles, messages, conversationId, n } = input;
+      const prompt = messages.map(item => item.content).join('');
+
 
       if (!imageFiles || imageFiles.length === 0) {
         throw new TRPCError({
@@ -135,6 +141,13 @@ export const aiRouter = router({
           message: 'No image provided',
         });
       }
+
+      const data = await db.insert(schema.messages).values({
+        content: prompt || '',
+        conversationId: input.conversationId,
+        userId: ctx.auth.userId,
+        role: 'user',
+      });
 
       try {
         const images = [];
@@ -152,7 +165,17 @@ export const aiRouter = router({
           prompt: prompt,
         });
 
-        return response;
+        const formattedImage = `data:image/png;base64,${response?.data?.[0]?.b64_json}`
+
+        const redata = await db.insert(schema.messages).values({
+          images: [formattedImage || ''],
+          content: '',
+          conversationId: input.conversationId,
+          userId: ctx.auth.userId,
+          role: 'assistant',
+        });
+
+        return formattedImage;
       } catch (error) {
         console.error("Error in image edit:", error);
         throw new TRPCError({

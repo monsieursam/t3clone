@@ -28,15 +28,22 @@ interface Props {
   llms: LLM[];
 }
 
+const extractBase64 = (dataUrl: string): string => {
+  return dataUrl.split(',')[1];
+};
+
 export default function ChatInterface({ llms }: Props) {
   const { conversationId } = useParams();
   const apiKey = useLiveQuery(() => db.apiKeyOpenRouter.toArray());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   const { messages: messageData, invalidateMessageQuery } = useMessages(conversationId as string);
   const { updateConversation } = useConversations();
   const [selectedLLM, setSelectedLLM] = useState<LLM | null>(llms.length > 0 ? llms[0] : null);
   const { mutateAsync: getAnswer } = api.ai.generateText.useMutation();
   const { mutateAsync: getImage, isPending: isPendingImage } = api.ai.generateImage.useMutation();
+  const { mutateAsync: editImage } = api.ai.editImage.useMutation();
 
   const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading } = useChat({
     initialMessages: messageData.map(msg => ({
@@ -68,40 +75,51 @@ export default function ChatInterface({ llms }: Props) {
       handleSubmit();
       setInput('');
     } else if (selectedLLM?.capacity?.some((c) => c === 'image')) {
-      const image = await getImage({
-        messages: [
-          ...messages,
-          {
-            role: 'user',
-            content: input,
-          }],
-        conversationId: conversationId as string,
-        n: 1,
-      })
+      if (
+        uploadedImages.length > 0
+      ) {
+        handleEditSubmit(e);
+        setInput('');
+        return;
+      } else {
 
-      if (image) {
 
-        invalidateMessageQuery();
 
-        setMessages((prev) => {
-          console.log(prev);
-          return [
-            ...(prev || []),
+        const image = await getImage({
+          messages: [
+            ...messages,
             {
-              id: Date.now().toString(),
               role: 'user',
               content: input,
-            },
-            {
-              id: Date.now().toString(),
-              role: 'assistant',
-              content: '',
-              images: [image],
-            },
-          ];
-        });
+            }],
+          conversationId: conversationId as string,
+          n: 1,
+        })
 
-        setInput('');
+        if (image) {
+
+          invalidateMessageQuery();
+
+          setMessages((prev) => {
+            console.log(prev);
+            return [
+              ...(prev || []),
+              {
+                id: Date.now().toString(),
+                role: 'user',
+                content: input,
+              },
+              {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: '',
+                images: [image],
+              },
+            ];
+          });
+
+          setInput('');
+        }
       }
 
     }
@@ -124,6 +142,76 @@ export default function ChatInterface({ llms }: Props) {
       })
     }
   }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setUploadedImages(prev => [...prev, base64]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setUploadedImages(prev => prev.filter((_, index) => index !== indexToRemove));
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (uploadedImages.length === 0 || !input.trim()) {
+      const errorMsg = 'Please upload at least one image and provide editing instructions';
+    }
+
+    // Process images to extract base64 data
+    const processedImages = [...uploadedImages];
+    processedImages.forEach((image, index) => {
+      processedImages[index] = extractBase64(image);
+    });
+
+    const data = await editImage({
+      imageFiles: processedImages,
+      conversationId: conversationId as string,
+      messages: [
+        ...messages,
+        {
+          role: 'user',
+          content: input,
+        }
+      ],
+    });
+
+    if (!data) {
+      throw new Error(`API error: ${data}`);
+    }
+    setMessages(prev => {
+      return [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'user',
+          content: input,
+        },
+        {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: '',
+          images: [data],
+        },
+      ];
+    });
+    setInput('');
+    setUploadedImages([]);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -230,6 +318,55 @@ export default function ChatInterface({ llms }: Props) {
               }
             </Button>
           </div>
+          {
+            selectedLLM?.capacity?.some((c) => c === 'image') && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Upload images to edit
+                  </label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    multiple
+                    className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-indigo-50 file:text-indigo-700
+            hover:file:bg-indigo-100"
+                  />
+                </div>
+
+                {uploadedImages.length > 0 && (
+                  <div className="mb-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {uploadedImages.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image}
+                          alt={`Uploaded image ${index + 1}`}
+                          className="w-full h-40 object-cover rounded-md"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+
+            )
+          }
+
         </form>
       </div>
       <div ref={messagesEndRef} />
