@@ -90,7 +90,7 @@ export default function ChatInterface({ llms }: Props) {
             {
               id: Date.now().toString(),
               role: 'assistant',
-              content: input,
+              content: '',
               images: [image],
             },
           ];

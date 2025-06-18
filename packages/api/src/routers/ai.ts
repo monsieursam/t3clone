@@ -102,7 +102,7 @@ export const aiRouter = router({
 
       const redata = await db.insert(schema.messages).values({
         images: [formattedImage || ''],
-        content: prompt || '',
+        content: '',
         conversationId: input.conversationId,
         userId: ctx.auth.userId,
         role: 'assistant',
